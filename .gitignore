@@ -1,0 +1,8 @@
+# we never store env vars, always document them in `.envrc.example`
+.envrc
+
+# if you want to create sensitive notes locally that aren't tracked
+README-sensitive.md
+
+# in case the original Synthea download was not deleted
+synthea_sample_data_fhir_latest.zip
