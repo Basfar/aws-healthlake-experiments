@@ -98,7 +98,55 @@ sequenceDiagram
 
 #### AWS HealthLake Orchestration Flow
 
-![AWS HealthLake Orchestration](./support/docs/hios-aws-healthlake.puml.svg)
+```mermaid
+sequenceDiagram
+    actor DataProducer as "Data Producer"
+    
+    participant CDA as "C-CDA\nXML Files"
+    participant HL7 as "HL7 v2.x\nEDI Files"
+    participant FHIR_JSON as "FHIR JSON\n(Bundles)"
+    
+    participant HLO_S3 as "HealthLake Orch\nAWS S3 Store"
+    participant HLO as "HealthLake Orch\n(this repo)"
+    
+    participant CCDA_FHIR_LAMBDA as "C-CDA to FHIR\nLambda API"
+    participant HL7_FHIR_LAMBDA as "HL7 to FHIR\nLambda API"
+    
+    participant HL as "AWS HealthLake\nFHIR-Native"
+    participant HLO_SUPPORT as "HealthLake Orch\nSupport Hub"
+    participant DOWNSTREAM as "Downstream Consumers\nOther Data Lakes"
+    
+    DataProducer ->> CDA: Produce C-CDA/XML Files
+    DataProducer ->> HL7: Produce HL7 v2.x Files
+    DataProducer ->> FHIR_JSON: Produce FHIR JSON Data
+    
+    CDA ->> HLO_S3: Lambda/SFTP to S3
+    HL7 ->> HLO_S3: Lambda/SFTP to S3
+    FHIR_JSON ->> HLO_S3: Lambda/SFTP\nto S3
+    
+    HLO ->> HLO_S3: S3 trigger\nor Batch Job\n(ingestion)
+    activate HLO
+    HLO ->> CCDA_FHIR_LAMBDA: C-CDA to FHIR Lambda
+    Note right of CCDA_FHIR_LAMBDA: how??
+    
+    CCDA_FHIR_LAMBDA ->> HL: Transformed C-CDA
+    HLO ->> HL7_FHIR_LAMBDA: HL7 v2 to FHIR Lambda
+    Note right of HL7_FHIR_LAMBDA: github.com<br>LinuxForHealth<br>hl7v2-fhir-converter<br>Lambda
+    
+    HL7_FHIR_LAMBDA ->> HL: Transformed HL7 v2
+    HLO ->> HL: Native FHIR Bundles and Resources
+    deactivate HLO
+    
+    Note right of HL: FHIR Queries<br>with HealthLake<br>for data validation<br><br>SQL Queries<br>with Athena<br>for data validation
+    
+    HLO_SUPPORT ->> HL: Query
+    HLO_SUPPORT ->> HLO_S3: Query
+    
+    Note right of HLO_SUPPORT: "Support Hub"<br>Provenance<br>Tracking<br>"Needs Attention"<br>etc.
+    
+    HLO ->> DOWNSTREAM: Read FHIR from HL and Send Bundles Downstream
+    DOWNSTREAM ->> HL: Access Directly?
+```
 
 ### Extensibility and Future Vision
 
@@ -138,11 +186,72 @@ has you covered.
 
 ---
 
-## Developer Sandbox Setup
+## AWS Developer Sandbox Setup
 
-Review [AWS HealthLake README](support/docs/README-aws-healthlake.md) and
+The following are necessary steps to set up an AWS environment for experimental
+use with the `hiosctl.py` script. The setup described here is intended for
+development and testing purposes only. In a production environment, additional
+security measures would be required to protect sensitive data and ensure
+compliance with best practices.
+
+**For DevOps**
+
+Review
 [healthlake-experimental-stack.aws-cdk](support/lib/healthlake-experimental-stack.aws-cdk.ts)
-to learn what basic setup to do for AWS and then:
+to see a non-working starting point for HIOS IaC.
+
+### 1. IAM User and Role Setup
+
+- **Create an IAM user** specifically for the developers or systems that will
+  run the `hiosctl.py` script. This user will need programmatic access to AWS
+  services. Suggested user name: `hios-experiment-api-prime-user`.
+- **Assign a policy** to this user that grants permissions to interact with S3
+  and to assume an IAM role that interacts with AWS HealthLake.
+- **Generate an access key and secret access key** for this IAM user. These
+  credentials will be used by the `hiosctl.py` script to authenticate with AWS.
+- **Create an IAM role** that AWS HealthLake can assume. This role must have
+  permissions to access the S3 bucket where FHIR data is stored and to interact
+  with AWS HealthLake services. Suggested role name:
+  `hios-experiment-api-prime-role`.
+- The IAM role should include a policy that allows the following actions:
+  - `s3:GetObject`, `s3:ListBucket` for accessing the S3 bucket.
+- Ensure that the `DataAccessRoleArn` parameter in the `hiosctl.py` script
+  points to this IAM role.
+
+### 2. S3 Bucket Setup
+
+- **Set up an S3 bucket** where FHIR data will be stored. This bucket will be
+  accessed by the `hiosctl.py` script for both uploading FHIR data and
+  retrieving data for HealthLake ingestion. Suggested bucket name:
+  `hios-experiment-prime`.
+- Enable **default encryption** for the bucket using S3-managed keys (SSE-S3).
+- **Configure the bucket policy** to allow access by the IAM user and the
+  HealthLake role.
+
+### 3. AWS HealthLake Datastore Setup
+
+- **Set up a HealthLake datastore** that will store and process FHIR data.
+  During the creation process, AWS will automatically manage encryption for the
+  datastore. Suggested datastore name: `hios-experiment-prime`.
+- Ensure that the `hiosctl.py` script points to the correct `DatastoreId` for
+  this HealthLake datastore.
+- The HealthLake datastore will need permission to read from the S3 bucket.
+
+### 4. Environment Configuration
+
+- On the system where `hiosctl.py` will run, export the necessary environment
+  variables for AWS authentication:
+  ```bash
+  export AWS_ACCESS_KEY_ID='your-access-key-id'
+  export AWS_SECRET_ACCESS_KEY='your-secret-access-key'
+  export AWS_REGION='your-aws-region'
+  ```
+- These environment variables allow the `hiosctl.py` script to authenticate with
+  AWS and interact with the required services.
+
+### 5. Testing and Validation
+
+**Summary**
 
 ```bash
 BUCKET_NAME=<your-S3-bucket-name>
@@ -153,3 +262,49 @@ $ ./support/bin/hiosctl.py doctor --bucket-name $BUCKET_NAME --datastore-id $DAT
 $ ./support/bin/hiosctl.py store-s3 --bucket-name $BUCKET_NAME --path support/synthetic-test-fixtures/fhir-bundles/
 $ ./support/bin/hiosctl.py ingest-healthlake --bucket-name $BUCKET_NAME --datastore-id $DATASTORE_ID --darole-arn "$DAROLE_ARN"
 ```
+
+**Elaboration**
+
+- Before using the script, run the `doctor` command to verify that the setup is
+  correct. This command checks for the existence of the necessary environment
+  variables, S3 bucket access, and HealthLake datastore availability.
+
+  ```bash
+  ./hiosctl.py doctor --bucket-name your-bucket-name --datastore-id your-datastore-id
+  ```
+- Use the `store-s3` command in the script to upload FHIR bundles to the S3
+  bucket.
+
+  ```bash
+  ./hiosctl.py store-s3 --bucket-name your-bucket-name --path /path/to/synthea_fhir_bundles
+  ```
+
+- Use the `ingest-healthlake` command to ingest the FHIR data from S3 into AWS
+  HealthLake. Ensure you pass the correct `DataAccessRoleArn` for HealthLake to
+  assume.
+
+  ```bash
+  ./hiosctl.py ingest-healthlake --bucket-name your-bucket-name --datastore-id your-datastore-id --darole-arn your-darole-arn
+  ```
+
+### Important Notes for Production Use
+
+While the setup described above is sufficient for experimental and development
+purposes, it is important to note that additional security measures are required
+for production environments:
+
+- **Enhanced IAM Policies:** In production, implement the principle of least
+  privilege by granting only the necessary permissions to IAM users and roles.
+  Avoid using overly permissive policies.
+- **Monitoring and Auditing:** Enable CloudTrail, CloudWatch, and other
+  monitoring services to track access and operations performed on your AWS
+  resources.
+- **Data Encryption:** Use customer-managed KMS keys for encrypting sensitive
+  data in S3 and AWS HealthLake, and implement key rotation policies.
+- **Secure Access Management:** Consider using multi-factor authentication (MFA)
+  for IAM users and implementing stricter access controls for sensitive
+  operations.
+
+This setup provides a foundation for experimenting with AWS services in a
+controlled environment, but remember that a more rigorous security posture is
+required when moving to production.
