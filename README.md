@@ -227,6 +227,26 @@ to see a non-working starting point for HIOS IaC.
 - Enable **default encryption** for the bucket using S3-managed keys (SSE-S3).
 - **Configure the bucket policy** to allow access by the IAM user and the
   HealthLake role.
+- **TODO: need to understand whether HealthLake requires custom KMS Keys or S3
+  Bucket Keys**. In `hiosctl.py` see
+  `JobOutputDataConfig.S3Configuration.KmsKeyId`:
+
+  ```python
+  healthlake_response = healthlake_client.start_fhir_import_job(
+      DatastoreId=datastore_id,
+      InputDataConfig={
+          'S3Uri': s3_uri
+      },
+      JobName=f'Ingest-{object_name[:55]}',  # Ensure job name is within the 64-character limit
+      DataAccessRoleArn=data_access_role_arn,
+      JobOutputDataConfig={
+          'S3Configuration': {
+              'S3Uri': f's3://{bucket_name}/healthlake-start_fhir_import_job-output/',
+              'KmsKeyId': '' # TODO: need to attach through CLI argument
+          }
+      }
+  )
+  ```
 
 ### 3. AWS HealthLake Datastore Setup
 
