@@ -228,8 +228,9 @@ to see a non-working starting point for HIOS IaC.
 - **Configure the bucket policy** to allow access by the IAM user and the
   HealthLake role.
 - **TODO: need to understand whether HealthLake requires custom KMS Keys or S3
-  Bucket Keys**. In `hiosctl.py` see
-  `JobOutputDataConfig.S3Configuration.KmsKeyId`:
+  Bucket Keys**. See
+  [Reducing the cost of SSE-KMS with Amazon S3 Bucket Keys](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html)
+  and in `hiosctl.py` see `JobOutputDataConfig.S3Configuration.KmsKeyId`:
 
   ```python
   healthlake_response = healthlake_client.start_fhir_import_job(
