@@ -86,12 +86,12 @@ def ingest_healthlake(bucket_name, datastore_id, data_access_role_arn):
                         InputDataConfig={
                             'S3Uri': s3_uri
                         },
-                        JobName=f'Ingest-{object_name}',
+                        JobName=f'Ingest-{object_name[:55]}',  # Ensure job name is within the 64-character limit
                         DataAccessRoleArn=data_access_role_arn,
                         JobOutputDataConfig={
                             'S3Configuration': {
-                                'S3Uri': f's3://{bucket_name}/output/',
-                                'KmsKeyId': "SSE-S3"
+                                'S3Uri': f's3://{bucket_name}/healthlake-start_fhir_import_job-output/',
+                                'KmsKeyId': '' # TODO: need to attach through CLI argument
                             }
                         }
                     )
