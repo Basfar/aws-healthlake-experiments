@@ -200,63 +200,293 @@ Review
 [healthlake-experimental-stack.aws-cdk](support/lib/healthlake-experimental-stack.aws-cdk.ts)
 to see a non-working starting point for HIOS IaC.
 
+## 0. AWS Account Setup
+
+### Step 1: Go to the AWS Website
+
+1. Open your web browser (like Chrome, Firefox, or Safari).
+2. In the address bar, type **`www.aws.amazon.com`** and press **Enter**.
+3. You'll be on the Amazon Web Services (AWS) homepage.
+
+### Step 2: Start the Sign-Up Process
+
+1. Look for a big button that says **"Create an AWS Account"** and click it.
+   - If you don't see the button, click on the "Sign In to the Console" link at the top-right of the page, and then select **"Create a new AWS account"**.
+
+### Step 3: Enter Your Email and Choose a Password
+
+1. On the "Sign Up" page:
+   - In the **Email address** box, type in your email address.
+   - In the **Password** box, create a password that you'll remember. Make sure it has at least 8 characters, with a mix of letters and numbers.
+   - In the **Confirm password** box, type the password again to make sure you got it right.
+   - In the **AWS account name** box, type a name for your account (e.g., "My First AWS Account").
+2. Click on the **Continue** button.
+
+### Step 4: Enter Your Contact Information
+
+1. On the "Contact Information" page:
+   - Choose **Personal** for the account type.
+   - Fill in your full name, phone number, and address.
+   - Check the box that says you’ve read and agreed to the AWS Customer Agreement.
+2. Click on the **Continue** button.
+
+### Step 5: Add Payment Information
+
+1. On the "Payment Information" page:
+   - You need to enter your credit or debit card information. Don't worry, AWS offers a **Free Tier**, which means you won’t be charged unless you go over the free limits.
+   - Fill in your card number, expiration date, and name as it appears on the card.
+   - AWS may place a small temporary charge (like $1) to verify your card, but this charge will disappear after a few days.
+2. Click on the **Verify and Continue** button.
+
+### Step 6: Confirm Your Identity
+
+1. On the "Identity Verification" page:
+   - Choose whether you want to receive a text message or a voice call to verify your identity.
+   - Enter your phone number and click on the **Send SMS** or **Call me now** button.
+2. AWS will send you a verification code. Enter the code you receive and click on **Verify code**.
+3. Click on **Continue**.
+
+### Step 7: Choose a Support Plan
+
+1. On the "Support Plan" page:
+   - Select the **Basic Plan (Free)**. This is all you need to get started, and it's completely free.
+2. Click on **Complete Sign Up**.
+
+### Step 8: Wait for the Confirmation
+
+1. You should see a confirmation page saying that your account is being activated. This usually takes a few minutes but can take up to 24 hours.
+2. AWS will send you a confirmation email once your account is ready.
+
+### Step 9: Sign In to Your AWS Account
+
+1. Once you receive the confirmation email, go back to the AWS homepage (**`www.aws.amazon.com`**).
+2. Click on the **Sign In to the Console** button.
+3. Enter your email address and password that you used to create the account.
+4. Click **Sign In**.
+
 ### 1. IAM User and Role Setup
 
-- **Create an IAM user** specifically for the developers or systems that will
-  run the `hiosctl.py` script. This user will need programmatic access to AWS
-  services. Suggested user name: `hios-experiment-api-prime-user`.
-- **Assign a policy** to this user that grants permissions to interact with S3
-  and to assume an IAM role that interacts with AWS HealthLake.
-- **Generate an access key and secret access key** for this IAM user. These
-  credentials will be used by the `hiosctl.py` script to authenticate with AWS.
-- **Create an IAM role** that AWS HealthLake can assume. This role must have
-  permissions to access the S3 bucket where FHIR data is stored and to interact
-  with AWS HealthLake services. Suggested role name:
-  `hios-experiment-api-prime-role`.
-- The IAM role should include a policy that allows the following actions:
-  - `s3:GetObject`, `s3:ListBucket` for accessing the S3 bucket.
-- Ensure that the `DataAccessRoleArn` parameter in the `hiosctl.py` script
-  points to this IAM role.
+#### 1. Create an IAM User
+
+1. **Sign in to the AWS Management Console:**
+   - Open your web browser and go to **[AWS Management Console](https://aws.amazon.com/console/)**.
+   - Log in with your AWS account credentials.
+
+2. **Navigate to the IAM Service:**
+   - In the AWS Management Console, type **"IAM"** in the search bar and select **IAM** from the dropdown.
+
+3. **Create a New User:**
+   - In the IAM Dashboard, click on **Users** in the left-hand menu.
+   - Click the **Add User** button.
+   - Enter a username. Suggested name: `your-name`.
+   - Under **Access type**, check the box for **Programmatic access**. This allows the user to interact with AWS via the AWS CLI, SDKs, and APIs.
+
+4. **Assign Policies to the User:**
+   - Click **Next: Permissions**.
+   - Select **Attach existing policies directly**.
+   - In the search bar, type and select the following policies:
+     - **IAMFullAccess**: Grants full access to IAM for managing users, groups, roles, and policies.
+     - **AmazonS3FullAccess**: Grants full access to Amazon S3, allowing the user to manage and interact with S3 buckets.
+     - **AWSHealthLakeFullAccess**: Grants full access to AWS HealthLake services.
+
+5. **Review and Create the User:**
+   - Click **Next: Tags** (you can skip adding tags).
+   - Click **Next: Review** to see a summary of the user details and permissions.
+   - Click **Create User**.
+
+#### 2. Generate an Access Key and Secret Access Key
+
+1. **View User Credentials:**
+   - After creating the user, you will be presented with a success page that shows the **Access key ID** and **Secret access key**.
+   - **Download the CSV file** with the credentials or copy them to a secure location. These keys are essential for programmatic access using the `HealthInfoOrchestrator.java` class.
+
+2. **Store the Keys Securely:**
+   - Treat these keys like a password. Do not share them or check them into version control systems.
+
+#### 3. Create an IAM Role
+
+1. **Navigate to IAM Roles:**
+   - In the IAM Dashboard, click on **Roles** in the left-hand menu.
+   - Click the **Create Role** button.
+
+2. **Select Trusted Entity:**
+   - Under **Select trusted entity**, choose **AWS Service**.
+   - Select **HealthLake** as the use case (or search for it in the services dropdown).
+
+3. **Assign Policies to the Role:**
+   - Click **Next: Permissions**.
+   - In the search bar, type and select the following policies:
+     - **AmazonS3FullAccess**: Grants the role permissions to access and interact with S3 buckets where FHIR data is stored.
+     - **AWSHealthLakeFullAccess**: Grants the role permissions to interact with AWS HealthLake services.
+   - Optionally, if you need the role to have full permissions for IAM, you can also attach the **IAMFullAccess** policy, though this is generally not recommended for least privilege.
+
+4. **Set Role Name:**
+   - Click **Next: Tags** (you can skip adding tags).
+   - Click **Next: Review**.
+   - Enter a role name. Suggested name: `hios-experiment-api-prime-role`.
+   - Click **Create Role**.
+
+5. **Note the Role ARN:**
+   - After creating the role, click on the role name in the list to view its details.
+   - Copy the **Role ARN** (Amazon Resource Name). You will need this ARN when configuring `HealthInfoOrchestrator.java` to ensure it can assume this role for necessary permissions.
+
+#### 4. Configure the `HealthInfoOrchestrator.java` Class
+
+1. **Update the Java Code:**
+   - Ensure that the `HealthInfoOrchestrator.java` class is configured to use the Access Key, Secret Access Key, and Role ARN created above.
+   - The AWS SDK for Java will automatically use these credentials if they are properly configured in your environment or passed as part of your application setup.
+
+2. **Environment Variables:**
+   - You can export the Access Key and Secret Access Key as environment variables on your system:
+     ```bash
+     export AWS_ACCESS_KEY_ID='your-access-key-id'
+     export AWS_SECRET_ACCESS_KEY='your-secret-access-key'
+     export AWS_REGION='your-aws-region'
+     ```
+   - These variables ensure that the Java application can authenticate with AWS services.
+
+3. **Role Assumption in Java:**
+   - Ensure that your Java application is set up to assume the IAM role using the provided Role ARN for interacting with AWS HealthLake and S3 services.
+
 
 ### 2. S3 Bucket Setup
 
-- **Set up an S3 bucket** where FHIR data will be stored. This bucket will be
-  accessed by the `hiosctl.py` script for both uploading FHIR data and
-  retrieving data for HealthLake ingestion. Suggested bucket name:
-  `hios-experiment-prime`.
-- Enable **default encryption** for the bucket using S3-managed keys (SSE-S3).
-- **Configure the bucket policy** to allow access by the IAM user and the
-  HealthLake role.
-- **TODO: need to understand whether HealthLake requires custom KMS Keys or S3
-  Bucket Keys**. See
-  [Reducing the cost of SSE-KMS with Amazon S3 Bucket Keys](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html)
-  and in `hiosctl.py` see `JobOutputDataConfig.S3Configuration.KmsKeyId`:
+#### A. Creating the S3 Bucket
 
-  ```python
-  healthlake_response = healthlake_client.start_fhir_import_job(
-      DatastoreId=datastore_id,
-      InputDataConfig={
-          'S3Uri': s3_uri
-      },
-      JobName=f'Ingest-{object_name[:55]}',  # Ensure job name is within the 64-character limit
-      DataAccessRoleArn=data_access_role_arn,
-      JobOutputDataConfig={
-          'S3Configuration': {
-              'S3Uri': f's3://{bucket_name}/healthlake-start_fhir_import_job-output/',
-              'KmsKeyId': '' # TODO: need to attach through CLI argument
-          }
-      }
-  )
-  ```
+1. **Sign in to the AWS Management Console:**
+   - Open your web browser and go to **[AWS Management Console](https://aws.amazon.com/console/)**.
+   - Log in with your AWS account credentials.
+
+2. **Navigate to the S3 Service:**
+   - In the AWS Management Console, type **"S3"** in the search bar and select **S3** from the dropdown.
+
+3. **Create a New Bucket:**
+   - Click the **Create bucket** button.
+   - Enter a unique bucket name. Suggested name: `hios-experiment-prime`.
+   - Select the appropriate AWS Region where you want the bucket to be created.
+
+4. **Enable Default Encryption:**
+   - Scroll down to the **Bucket settings for Block Public Access** and ensure it is enabled to prevent unauthorized access.
+   - In the **Default encryption** section, enable **Server-Side Encryption** with S3-managed keys (SSE-S3).
+   - This ensures that all objects stored in the bucket are automatically encrypted.
+
+5. **Review and Create the Bucket:**
+   - Leave the rest of the settings as default and click **Create bucket**.
+   - Your new bucket will appear in the S3 console.
+
+#### B. Configure Bucket Policies and Access
+
+1. **Assign Bucket Policy for IAM User and Role:**
+   - Navigate to your newly created bucket in the S3 console.
+   - Click on the **Permissions** tab.
+   - Under **Bucket policy**, click **Edit** and add the following policy, replacing `YOUR_BUCKET_NAME`, `IAM_USER_ARN`, and `IAM_ROLE_ARN` with your actual bucket name, IAM user ARN, and IAM role ARN respectively:
+
+   ```json
+   {
+       "Version": "2012-10-17",
+       "Statement": [
+           {
+               "Effect": "Allow",
+               "Principal": {
+                   "AWS": [
+                       "arn:aws:iam::YOUR_ACCOUNT_ID:user/YOUR_IAM_USER_NAME",
+                       "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_IAM_ROLE_NAME"
+                   ]
+               },
+               "Action": [
+                   "s3:GetObject",
+                   "s3:PutObject",
+                   "s3:ListBucket"
+               ],
+               "Resource": [
+                   "arn:aws:s3:::YOUR_BUCKET_NAME",
+                   "arn:aws:s3:::YOUR_BUCKET_NAME/*"
+               ]
+           }
+       ]
+   }
+    ```
+#### C. Using the Bucket in the HealthInfoOrchestrator.java
+
+1. **Pass the S3 Bucket Name in the Environment Configuration:**
+   - You can specify the S3 bucket name using an environment variable in your `.envrc` file:
+     ```bash
+     export AWS_S3_BUCKET_NAME='your-existing-bucket-name'
+     export AWS_REGION='us-east-2'
+     ```
+   - If the environment variable `AWS_S3_BUCKET_NAME` is set, the application will use the specified bucket.
+
+2. **Automatic Bucket Creation if Not Provided:**
+   - If no bucket name is provided via the environment variable, the `HealthInfoOrchestrator.java` class is designed to automatically create a new S3 bucket.
+   - The bucket name will be dynamically generated to ensure uniqueness, as shown in the `HealthInfoOrchestratorTest` class:
+
+   ```java
+   bucketName = "test-bucket-" + UUID.randomUUID() + "-" + System.currentTimeMillis();
+
+   Consumer<AmazonS3> ifNotExist = (AmazonS3 s3Client) -> {
+       if (!s3Client.doesBucketExistV2(bucketName)) {
+           System.out.println("Bucket " + bucketName + " does not exist. Creating it now.");
+           s3Client.createBucket(new CreateBucketRequest(bucketName, region));
+       } else {
+           System.out.println("Bucket " + bucketName + " already exists. No action needed.");
+       }
+   };
+   ```
 
 ### 3. AWS HealthLake Datastore Setup
 
-- **Set up a HealthLake datastore** that will store and process FHIR data.
-  During the creation process, AWS will automatically manage encryption for the
-  datastore. Suggested datastore name: `hios-experiment-prime`.
-- Ensure that the `hiosctl.py` script points to the correct `DatastoreId` for
-  this HealthLake datastore.
-- The HealthLake datastore will need permission to read from the S3 bucket.
+
+1. **Set up a HealthLake Datastore:**
+   - Create a HealthLake datastore to store and process FHIR data.
+   - During the creation process, AWS will automatically manage encryption for the datastore.
+   - Suggested datastore name: `hios-experiment-prime`.
+   - Ensure that the datastore is configured correctly to interact with your S3 bucket and the IAM role.
+
+2. **Configuring the `HealthInfoOrchestrator.java` for HealthLake Import:**
+   - The `HealthInfoOrchestrator.java` class is designed to import FHIR data from the S3 bucket into the AWS HealthLake datastore.
+   - For now, the import job is executed via the AWS CLI due to issues encountered with the AWS SDK. However, the plan is to switch to the SDK as the main solution in the future.
+   - Ensure the following environment variables are set in your `.envrc` file:
+     ```bash
+     export HEALTHLAKE_DATASTORE_ID='your-datastore-id'
+     export HEALTHLAKE_ROLE_ARN='your-role-arn'
+     export KMS_KEY_ID='your-kms-key-id' # Optional: only if using custom KMS keys
+     ```
+   - These variables ensure that the `HealthInfoOrchestrator` knows where to send the FHIR data and how to authenticate the requests.
+
+3. **HealthLake Import Process (Using AWS CLI):**
+   - The `AwsCliHealthLakeFhirStore` class, part of `HealthInfoOrchestrator.java`, currently uses the AWS CLI to start the import job. This is a temporary solution until the AWS SDK is fully implemented.
+   - The import process involves the following steps:
+     1. Retrieve the latest `.ndjson` file from the S3 bucket.
+     2. Construct the S3 URI for the input file and the output location.
+     3. Construct and execute an AWS CLI command to start the FHIR import job in HealthLake.
+
+   - Example of how the CLI command is constructed:
+     ```java
+     final var command = String.format(
+         "aws healthlake start-fhir-import-job " +
+         "--input-data-config S3Uri=%s " +
+         "--datastore-id %s " +
+         "--data-access-role-arn \"%s\" " +
+         "--job-output-data-config '{\"S3Configuration\": {\"S3Uri\":\"%s\",\"KmsKeyId\":\"%s\"}}' " +
+         "--region %s",
+         s3Uri,
+         datastoreId,
+         roleArn,
+         outputS3Uri,
+         kmsKeyId,
+         region);
+     ```
+
+   - This command is executed by the `AwsCliInvoker` class, which handles interaction with the AWS CLI.
+
+4. **Monitoring the Import Process:**
+   - You can monitor the import job's progress via the AWS Management Console or the AWS CLI.
+   - The `HealthInfoOrchestrator` logs the status of the import job to help with debugging and validation.
+   - The `wasExecutionSuccessful()` method in the `AwsCliHealthLakeFhirStore` class can be used to check if the CLI command was executed successfully.
+
+5. **Future Plans:**
+   - The current reliance on AWS CLI for importing FHIR data is a temporary solution. The development team plans to switch to using the AWS SDK once the issues with the `StartFHIRImportJobRequest` class are resolved.
+   - This future transition will streamline the import process and eliminate the need for external CLI invocations, making the system more robust and easier to maintain.
 
 ### 4. Environment Configuration
 
@@ -275,14 +505,15 @@ to see a non-working starting point for HIOS IaC.
 **Summary**
 
 ```bash
-BUCKET_NAME=<your-S3-bucket-name>
-DATASTORE_ID=<healthlake-datastore-ID>
-DAROLE_ARN=<S3-bucket-data-access-role-arn>
-
-$ ./support/bin/hiosctl.py doctor --bucket-name $BUCKET_NAME --datastore-id $DATASTORE_ID
-$ ./support/bin/hiosctl.py store-s3 --bucket-name $BUCKET_NAME --path support/synthetic-test-fixtures/fhir-bundles/
-$ ./support/bin/hiosctl.py ingest-healthlake --bucket-name $BUCKET_NAME --datastore-id $DATASTORE_ID --darole-arn "$DAROLE_ARN"
+   git clone https://github.com/netspective-labs/aws-healthlake-experiments
+   cd aws-healthlake-experiments
+   brew install direnv        # install direnv
+   eval "$(direnv hook zsh)"  # enable direnv
+   direnv allow               # apply the env vars
+   mvn test                   # run the application 
 ```
+
+
 
 **Elaboration**
 
